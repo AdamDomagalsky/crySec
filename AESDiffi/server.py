@@ -26,11 +26,11 @@ while True:
 
     # Receive the data in small chunks and retransmit it
     while True:
-      data = connection.recv(16)
+      data = connection.recv(120)
       print(sys.stderr, 'received "%s"' % data)
       if data:
         print(sys.stderr, 'sending data back to the client')
-
+        print(data.decode('utf-8'))
         g,p, alicePublicKey = data.decode('utf-8').split(':')
         g = int(g)
         p = int(p)
@@ -46,9 +46,6 @@ while True:
 
         print('Bob key(%d): %d' % (bob.bit_length(), bob))
 
-
-
-        print(sys.stderr, message.encode('utf-8'))
         connection.sendall(message.encode('utf-8'))
       else:
         print(sys.stderr, 'no more data from', client_address)

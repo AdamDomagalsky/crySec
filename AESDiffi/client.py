@@ -1,36 +1,21 @@
 from AESCipher import AESCipher
+from DiffieHellman import DiffieHellman
+
 from random import randint
 import sys
 from Crypto.Util import number
 import socket
 
-obj = AESCipher('123234324234542dsfsdzdsdcsdcsdasd')
+# obj = AESCipher('123234324234542dsfsdzdsdcsdcsdasd')
 
-enc = obj.encrypt('siema')
-print(enc)
-dec = obj.decrypt(enc)
-print(dec)
+# enc = obj.encrypt('siema')
+# print(enc)
+# dec = obj.decrypt(enc)
+# print(dec)
 
 
 # teraz to wrzucamy do 3des
 # https://en.wikipedia.org/wiki/Diffie%E2%80%93Hellman_key_exchange
-
-INIT_PRIME_SIZE = 10 # secound prime number will be twice +1 bigger
-
-def getPrimeRoot():
-  while True:
-    q = number.getPrime(INIT_PRIME_SIZE)
-    p = 2*q+1
-    if number.isPrime(p):
-      break
-
-  while True:
-    g = randint(2,p-1)
-    if (pow(g,2,p) != 1) and (pow(g,q,p) != 1):
-      return g, p
-
-g, p = getPrimeRoot()
-
 
 # Create a TCP/IP socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -43,8 +28,8 @@ sock.connect(server_address)
 try:
 
   # Send data
-  alicePrivateKey = randint(1,p-1)
-  alicePublicKey  = pow(g,alicePrivateKey,p)
+  dhAlice = DiffieHellman()
+  g,p,alicePublicKey = dhAlice.getBaseAndModulusAndPublicKey()
   message = str(g)+':'+str(p)+':'+str(alicePublicKey)
 
 
@@ -56,12 +41,12 @@ try:
   amount_expected = len(message)
 
   while amount_received < amount_expected:
-    data = sock.recv(16)
+    data = sock.recv(120)
     amount_received += len(data)
     print(sys.stderr, 'received "%s"' % data)
     bobPublicKey = data.decode('utf-8')
     bobPublicKey = int(bobPublicKey)
-    alice = pow(bobPublicKey,alicePrivateKey,p)
+    alice = dhAlice.calcSecret(bobPublicKey)
 
     print('Alice key(%d): %d' % (alice.bit_length(), alice))
 

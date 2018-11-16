@@ -26,7 +26,6 @@ def make_random_shares(minimum, shares, prime=_PRIME):
               for i in range(1, shares + 1)]
     return poly[0], points
 
-
 def _extended_gcd(a, b):
     x = 0
     last_x = 1
@@ -38,10 +37,8 @@ def _extended_gcd(a, b):
         x, last_x = last_x - quot * x, x
         y, last_y = last_y - quot * y, y
     return last_x, last_y
-print(_extended_gcd(31,4284))
 
 def _divmod(num, den, p):
-
     inv, _ = _extended_gcd(den, p)
     return num * inv
 

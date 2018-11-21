@@ -6,23 +6,14 @@ import sys
 from Crypto.Util import number
 import socket
 
-# obj = AESCipher('123234324234542dsfsdzdsdcsdcsdasd')
-
-# enc = obj.encrypt('siema')
-# print(enc)
-# dec = obj.decrypt(enc)
-# print(dec)
-
-
-# teraz to wrzucamy do 3des
-# https://en.wikipedia.org/wiki/Diffie%E2%80%93Hellman_key_exchange
+aesOBJ = object()
 
 # Create a TCP/IP socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 # Connect the socket to the port where the server is listening
 server_address = ('localhost', 9999)
-print(sys.stderr, 'connecting to %s port %s' % server_address)
+print('connecting to %s port %s' % server_address)
 sock.connect(server_address)
 
 try:
@@ -30,28 +21,47 @@ try:
   # Send data
   dhAlice = DiffieHellman()
   g,p,alicePublicKey = dhAlice.getBaseAndModulusAndPublicKey()
-  message = str(g)+':'+str(p)+':'+str(alicePublicKey)
-
-
-  print(sys.stderr, 'sending "%s"' % message)
+  message = "DH|" + str(g)+':'+str(p)+':'+str(alicePublicKey)
+  aliceSharedSecret = ""
+  print('sending: %s' % message)
   sock.sendall(message.encode('utf-8'))
 
-  # Look for the response
-  amount_received = 0
-  amount_expected = len(message)
+  while True:
+    # Look for the response
+    amount_received = 0
+    amount_expected = len(message)
 
-  while amount_received < amount_expected:
-    data = sock.recv(120)
-    amount_received += len(data)
-    print(sys.stderr, 'received "%s"' % data)
-    bobPublicKey = data.decode('utf-8')
-    bobPublicKey = int(bobPublicKey)
-    alice = dhAlice.calcSecret(bobPublicKey)
+    while amount_received < amount_expected:
+      data = sock.recv(500)
+      amount_received += len(data)
+      print('received: %s' % data.decode('utf-8'))
+      header, body = data.decode('utf-8').split('|')
 
-    print('Alice key(%d): %d' % (alice.bit_length(), alice))
+      if header == "DH":
+        bobPublicKey = int(body)
+        aliceSharedSecret = dhAlice.calcSecret(bobPublicKey)
+        print('Alice SharedSecret(%d): %d' % (aliceSharedSecret.bit_length(), aliceSharedSecret))
 
+        aesOBJ = AESCipher(str(aliceSharedSecret))
+        enc = aesOBJ.encrypt('this is test AES cipher message')
+        message = "AES|".encode('utf-8') + enc
+        # print(enc)
+        # dec = aesOBJ.decrypt(enc)
+        # print(dec)
+        sock.sendall(message)
+
+      elif header == "AES":
+        decryptedBody = aesOBJ.decrypt(body)
+        print("RESPONSE: %s" %decryptedBody)
+        inpt = input('Your message > ')
+        enc = aesOBJ.encrypt(inpt)
+        message = "AES|".encode('utf-8') + enc
+        sock.sendall(message)
+      else:
+        message = "UNKNOWN"
+        sock.sendall(message.encode('utf-8'))
 
 finally:
-  print(sys.stderr, 'closing socket')
+  print('closing socket')
   sock.close()
 

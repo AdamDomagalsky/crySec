@@ -1,6 +1,7 @@
 from AESCipher import AESCipher
 from random import randint
 from Crypto.Util import number
+from DiffieHellman import DiffieHellman
 
 aesOBJ = object()
 
@@ -39,13 +40,12 @@ while True:
           p = int(p)
           alicePublicKey = int(alicePublicKey)
 
-          bobPrivateKey = randint(1,p-1)
-          bobPublicKey = pow(g,bobPrivateKey,p)
-          message = "DH|" + str(bobPublicKey)
+          dhBob = DiffieHellman(g,p,alicePublicKey)
+          message = "DH|" + str(dhBob.publicKey)
           message = message.encode('utf-8')
-          bobSharedSecret = pow(alicePublicKey,bobPrivateKey,p)
-          print('Bob SharedSecret(%d): %d' % (bobSharedSecret.bit_length(), bobSharedSecret))
-          aesOBJ = AESCipher(str(bobSharedSecret))
+          # bobSharedSecret = pow(alicePublicKey,bobPrivateKey,p)
+          print('Bob SharedSecret(%d): %d' % (dhBob.sharedSecret.bit_length(), dhBob.sharedSecret))
+          aesOBJ = AESCipher(str(dhBob.sharedSecret))
         elif header == "AES":
           decryptedBody =  aesOBJ.decrypt(body)
           print("RESPONSE: %s" % decryptedBody)

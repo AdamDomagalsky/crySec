@@ -45,9 +45,6 @@ try:
         aesOBJ = AESCipher(str(aliceSharedSecret))
         enc = aesOBJ.encrypt('this is test AES cipher message')
         message = "AES|".encode('utf-8') + enc
-        # print(enc)
-        # dec = aesOBJ.decrypt(enc)
-        # print(dec)
         sock.sendall(message)
 
       elif header == "AES":
